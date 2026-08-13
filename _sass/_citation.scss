@@ -1,0 +1,184 @@
+/**
+ * "Cite" pill in the post header. Anchors to #cite (no-JS fallback); JS upgrades
+ * it to open the citation popup. Sits on the meta row below the title, opposite
+ * the date.
+ */
+.post-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-unit * 0.5;
+
+  .post-meta {
+    margin-bottom: 0;
+  }
+}
+
+.cite-pill {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.3em 0.7em;
+  @include relative-font-size(1.05);
+  font-weight: 700;
+  line-height: 1;
+  color: #1f3a2a;
+  text-decoration: none;
+  background-color: #fff;
+  border: 1px solid #cbe3d4;
+  border-radius: 999px;
+
+  &:hover {
+    background-color: #f6f6f6;
+    border-color: #b3d6c0;
+    text-decoration: none;
+  }
+
+  .cite-pill-icon {
+    display: block;
+  }
+}
+
+/**
+ * Citation boxes (shared by the inline section and the popup). The whole box is
+ * a click-to-copy target with a copy icon in the top-right corner.
+ */
+.cite-box {
+  position: relative;
+  margin-bottom: $spacing-unit * 0.5;
+  padding: 0.8em 1em;
+  padding-right: 3em;
+  background-color: #f8f8f8;
+  border: 1px solid $grey-color-light;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &:hover {
+    border-color: $grey-color;
+    background-color: #f2f2f2;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $brand-color;
+    outline-offset: 2px;
+  }
+
+  .citation-text {
+    color: $text-color;
+    word-wrap: break-word;
+  }
+
+  .citation-bibtex {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    white-space: pre;
+    overflow-x: auto;
+    @include relative-font-size(0.8125);
+    line-height: 1.4;
+  }
+
+  .citation-bibtex > code {
+    background: transparent;
+    border: 0;
+    padding: 0;
+  }
+}
+
+.cite-box-status {
+  position: absolute;
+  top: 0.55em;
+  right: 0.6em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  color: $grey-color;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  pointer-events: none;
+
+  svg {
+    display: block;
+  }
+}
+
+.cite-box:hover .cite-box-status {
+  color: $text-color;
+}
+
+.cite-box.is-copied .cite-box-status {
+  color: #2e7d32;
+}
+
+/**
+ * Inline "Cite this post" section at the foot of the post.
+ */
+.citation {
+  margin-top: $spacing-unit * 1.5;
+  padding-top: $spacing-unit * 0.5;
+  border-top: 1px solid $grey-color-light;
+  scroll-margin-top: $spacing-unit;
+  @include relative-font-size(0.9375);
+
+  h2 {
+    @include relative-font-size(1.25);
+    margin-bottom: $spacing-unit * 0.5;
+  }
+}
+
+/**
+ * Citation popup.
+ */
+.cite-dialog {
+  width: 90%;
+  max-width: 640px;
+  padding: 0;
+  color: $text-color;
+  background-color: $background-color;
+  border: 1px solid $grey-color-light;
+  border-radius: 10px;
+  box-shadow: 0 12px 44px rgba(0, 0, 0, 0.22);
+
+  &::backdrop {
+    background-color: rgba(0, 0, 0, 0.45);
+  }
+}
+
+.cite-dialog-inner {
+  padding: $spacing-unit * 0.75 $spacing-unit;
+  @include relative-font-size(0.9375);
+}
+
+.cite-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-unit * 0.5;
+
+  h2 {
+    margin: 0;
+    @include relative-font-size(1.25);
+  }
+}
+
+.cite-dialog-close {
+  padding: 0 0.15em;
+  font-size: 26px;
+  line-height: 1;
+  color: $grey-color;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+
+  &:hover {
+    color: $text-color;
+  }
+}

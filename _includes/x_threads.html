@@ -1,0 +1,31 @@
+{%- comment -%}
+The thread-group renderer shared by x_year.html and x_index.html. Expects
+page.thread_groups, page.parents, page.quotes, page.owner, all precomputed by
+_plugins/x_generator.rb.
+
+Every card sits in its own .x-thread__item, a parent card included: the thread
+line is drawn on that wrapper (see _sass/_x.scss), so a card without one would
+break the line.
+{%- endcomment -%}
+{%- for thread in page.thread_groups -%}
+<section class="x-thread">
+  {%- assign root = thread.first -%}
+  {%- assign parent = page.parents[root.id] -%}
+  {%- if parent -%}
+  <div class="x-thread__item">
+    {%- include x_post.html post=parent.post author=parent.author variant="parent" -%}
+  </div>
+  {%- endif -%}
+  {%- for post in thread -%}
+  <div class="x-thread__item">
+    {%- include x_post.html post=post author=page.owner variant="main" -%}
+    {%- assign quoted = page.quotes[post.id] -%}
+    {%- if quoted -%}
+    <div class="x-post__quote">
+      {%- include x_post.html post=quoted.post author=quoted.author variant="quoted" -%}
+    </div>
+    {%- endif -%}
+  </div>
+  {%- endfor -%}
+</section>
+{%- endfor -%}

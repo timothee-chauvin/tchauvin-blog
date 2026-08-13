@@ -1,0 +1,24 @@
+<link rel="dns-prefetch" href="https://fonts.gstatic.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,400;0,700;1,400&amp;display=swap"
+  rel="stylesheet">
+{%- if page.math -%}
+<script src="/assets/js/mathjax-config.js"></script>
+{% comment %}
+Self-hosted (vendored from mathjax@3.2.2 npm, es5/ layout preserved so MathJax
+finds its fonts relative to the script URL): no third-party script means no
+supply-chain XSS surface and no visitor IPs leaking to a CDN. SRI on the CDN
+script would not have covered the components MathJax lazy-loads.
+{%- endcomment -%}
+<script src="/assets/vendor/mathjax/tex-chtml.js" async></script>
+{%- endif -%}
+{%- if site.goatcounter -%}
+<!-- Privacy-friendly analytics with https://www.goatcounter.com -->
+{% comment %}
+Self-hosted like mathjax (verified against GoatCounter's published SRI hash at
+vendor time): keeps script-src at 'self' in the CSP and gc.zgo.at out of the
+request log entirely. The count endpoint (site.goatcounter) is still remote.
+{%- endcomment -%}
+
+<script data-goatcounter="{{ site.goatcounter }}" async src="/assets/vendor/goatcounter/count.v5.js"></script>
+{% endif %}

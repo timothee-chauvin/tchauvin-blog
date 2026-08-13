@@ -1,0 +1,25 @@
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {%- comment -%}
+  CSP (meta form: GitHub Pages cannot set headers). script-src 'self' with no
+  unsafe-inline is the load-bearing directive: it neutralizes stored XSS from
+  mirrored X content even if template escaping regresses, which is what keeps
+  the localStorage curate token safe — so no inline scripts or handlers
+  anywhere; site JS lives in /assets/js/. 'unsafe-inline' styles are accepted
+  (MathJax injects a stylesheet; posts may carry <style> blocks). connect-src:
+  'self' for the copy-for-LLM fetches, api.github.com for the owner curate/sync
+  buttons. frame-src: YouTube embeds in posts. Standalone pages with their own
+  <head> (wedding pages) are outside this policy.
+  {%- endcomment -%}
+  {%- if site.goatcounter -%}{%- assign gc_origin = site.goatcounter | split: "/" | slice: 0, 3 | join: "/" -%}{%- endif %}
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self'{% if gc_origin %} {{ gc_origin }}{% endif %}; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.github.com{% if gc_origin %} {{ gc_origin }}{% endif %}; frame-src https://www.youtube-nocookie.com; base-uri 'none'; form-action 'none'">
+  {%- seo -%}
+  <link rel="stylesheet" href="{{"/assets/main.css" | relative_url }}">
+  {%- feed_meta -%}
+  {%- if jekyll.environment == 'production' and site.google_analytics -%}
+  {%- include google-analytics.html -%}
+  {%- endif -%}
+  {%- include head_custom.html -%}
+</head>

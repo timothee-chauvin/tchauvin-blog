@@ -1,0 +1,10 @@
+_site
+.sass-cache
+.jekyll-cache
+.jekyll-metadata
+# Root-anchored: bundler's gem tree, NOT assets/vendor/ (vendored mathjax lives there)
+/vendor
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/

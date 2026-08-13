@@ -1,0 +1,40 @@
+---
+layout: default
+---
+{%- comment -%}
+One year of one tree (curated or full) of the X mirror. `page.thread_groups`,
+`page.parents`, `page.quotes` and `page.owner` are all precomputed by
+_plugins/x_generator.rb, which has already resolved every cross-reference, so
+this template only walks.
+{%- endcomment -%}
+<div class="x-archive">
+  <header class="x-archive__header">
+    <h1 class="page-heading">{{ page.title }}</h1>
+    <div class="post-pills">
+      {%- if page.tree == "curated" -%}
+      {%- include copy_pill.html src="/llm/x/curated.md" label="Copy the curated posts as Markdown for an LLM" -%}
+      {%- else -%}
+      {%- assign llm_src = '/llm/x/' | append: page.year | append: '.md' -%}
+      {%- include copy_pill.html src=llm_src label="Copy this year's posts as Markdown for an LLM" -%}
+      {%- endif -%}
+    </div>
+  </header>
+
+  <p class="x-archive__counterpart">
+    {%- if page.tree == "curated" -%}
+    Curated selection — <a href="{{ page.counterpart_url | relative_url }}">full archive for {{ page.year }}</a>
+    {%- else -%}
+    Full archive — <a href="{{ page.counterpart_url | relative_url }}">curated selection for {{ page.year }}</a>
+    {%- endif -%}
+  </p>
+
+  {%- if page.thread_groups.size == 0 -%}
+  <p class="x-archive__empty">Nothing curated from {{ page.year }} (yet).</p>
+  {%- endif -%}
+  {%- include x_threads.html -%}
+
+  <p class="x-archive__nav"><a href="{{ '/x/' | append: page.tree | append: '/' | relative_url }}">All years</a></p>
+</div>
+
+{%- include copy_llm.html -%}
+{%- include x_curate.html -%}

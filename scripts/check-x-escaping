@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# Self-test for the /llm/x/ structural escaping in _plugins/x_generator.rb.
+#
+# Why this exists separately from check-llm-x: that check reads a *built* site,
+# so everything it can prove depends on what the owner happens to have tweeted.
+# Injecting real regressions (dropping escape_fence, dropping escape_html_block)
+# and running check-llm-x against fixture-scale data caught neither — there was
+# no code fence and no line-leading '<' in the data to catch them with. A guard
+# whose sensitivity depends on the corpus is not a guard.
+#
+# escape_structural is a pure String -> String function with no Jekyll
+# dependency beyond XMirror::Generator being instantiable (Jekyll::Plugin's
+# initializer defaults its config), so it can be driven directly against a
+# fixed adversarial corpus. That makes this check data-independent: it needs no
+# _data/x/, no build, and no site content, and it fires identically on an empty
+# repository and a full one. It is the only automated coverage the Ruby half of
+# this feature has.
+#
+# A load failure here ("cannot load such file -- jekyll") means the bundle isn't
+# installed: run `bundle install` in the repo root.
+set -euo pipefail
+
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+
+BUNDLE_GEMFILE="$repo_root/Gemfile" bundle exec ruby -rjekyll - \
+  "$repo_root/_plugins/x_generator.rb" <<'RUBY'
+require ARGV[0]
+
+# Post text that impersonates document structure. Every one of these, left
+# unescaped, is read by CommonMark as a block construct; the fence, the HTML
+# comment, the processing instruction, the CDATA and the <script> all run to
+# EOF, swallowing every '### ' post heading below them — across year
+# boundaries once /llm/x.md concatenates the years.
+STRUCTURE = {
+  "```ruby"                   => "\\```ruby",
+  "~~~"                       => "\\~~~",
+  "### not a post heading"    => "\\### not a post heading",
+  "> not a citation"          => "\\> not a citation",
+  "---"                       => "\\---",
+  "- a bullet"                => "\\- a bullet",
+  "1. an ordered item"        => "1\\. an ordered item",
+  "1) an ordered item"        => "1\\) an ordered item",
+  "<script>"                  => "\\<script>",
+  "<!-- unclosed comment"     => "\\<!-- unclosed comment",
+  "<?php echo 'hi';"          => "\\<?php echo 'hi';",
+  "<![CDATA[payload"          => "\\<![CDATA[payload",
+  "intro\n### buried\ntail"   => "intro\n\\### buried\ntail",
+}.freeze
+
+# Ordinary prose that merely looks structural. This file preserves post text
+# byte-for-byte, so escaping any of these is as much a defect as missing one
+# above — the mid-line '<' cases especially, since CommonMark never opens an
+# HTML block mid-paragraph.
+LITERAL = [
+  "2 < 3",
+  "<3",
+  "3.5 hours later",
+  "-2 degrees",
+  "talking about <script>alert(1)</script> mid-sentence",
+].freeze
+
+generator = XMirror::Generator.new
+failures = []
+
+STRUCTURE.each do |input, expected|
+  actual = generator.send(:escape_structural, input)
+  next if actual == expected
+
+  failures << "  #{input.inspect} must be neutralized\n" \
+              "    expected #{expected.inspect}\n    got      #{actual.inspect}"
+end
+
+LITERAL.each do |input|
+  actual = generator.send(:escape_structural, input)
+  next if actual == input
+
+  failures << "  #{input.inspect} is ordinary prose and must pass through untouched\n" \
+              "    got      #{actual.inspect}"
+end
+
+if failures.empty?
+  puts "check-x-escaping: OK (#{STRUCTURE.size} structural, #{LITERAL.size} literal cases)"
+else
+  warn "check-x-escaping: escape_structural in _plugins/x_generator.rb is wrong " \
+       "for #{failures.size} case(s):"
+  warn failures.join("\n")
+  exit 1
+end
+RUBY

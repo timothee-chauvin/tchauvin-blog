@@ -1,0 +1,19 @@
+{%- comment -%}
+The two citation boxes (plain text + BibTeX). Click anywhere on a box to copy.
+Expects cite_author, cite_year, cite_url, cite_key, access_human, access_iso, ob, cb
+to be assigned by the including template. Used inline and inside the cite dialog.
+{%- endcomment -%}
+<div class="cite-box" role="button" tabindex="0" aria-label="Copy citation">
+  <span class="cite-box-status" aria-hidden="true"></span>
+  <div class="cite-copyable citation-text">{{ cite_author | escape }} ({{ cite_year }}), "{{ page.title | escape }}". Published online at {{ site.domain }}. Retrieved from '{{ cite_url | escape }}' [online resource]. Accessed <span class="cite-access-human">{{ access_human }}</span>.</div>
+</div>
+<div class="cite-box" role="button" tabindex="0" aria-label="Copy BibTeX">
+  <span class="cite-box-status" aria-hidden="true"></span>
+  <pre class="citation-bibtex"><code class="cite-copyable">@misc{{ ob }}{{ cite_key | escape }},
+  title={{ ob }}{{ ob }}{{ page.title | escape }}{{ cb }}{{ cb }},
+  author={{ ob }}{{ cite_author | escape }}{{ cb }},
+  year={{ ob }}{{ cite_year }}{{ cb }},
+  url={{ ob }}{{ cite_url | escape }}{{ cb }},
+  note={{ ob }}Accessed: <span class="cite-access-iso">{{ access_iso }}</span>{{ cb }}
+{{ cb }}</code></pre>
+</div>

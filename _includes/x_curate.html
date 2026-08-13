@@ -1,0 +1,15 @@
+{%- comment -%}
+Owner-only curation and sync controls. Inert for visitors: nothing runs and no
+request leaves the page unless a GitHub token is present in localStorage under
+'x-curate-token' (a fine-grained PAT for this repo: Actions read/write ONLY —
+deliberately not Contents). Set it manually:
+localStorage.setItem('x-curate-token', '...').
+
+Stars toggle locally; "Push" dispatches the curate.yml workflow with add/remove
+id lists — the workflow (which the token cannot modify) edits
+_data/x/curated.json server-side and rebuilds the site. "Sync now" dispatches
+the hourly x-sync.yml immediately. A stolen token can thus dispatch these
+reviewable workflows and read Actions logs, but cannot read repo contents or
+push — see the workflow files for the capability boundary.
+{%- endcomment -%}
+<script src="/assets/js/x-curate.js"></script>

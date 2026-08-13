@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Smoke test for the machine view at /llm/x/: fails loudly if the combined
+# archive is missing, too small to be real content, doesn't look like the
+# archive it claims to be, was corrupted by HTML-escaping, or lost post
+# headings to a block construct that a post's own text opened.
+#
+# This deliberately does NOT scan for '<' or HTML tags: raw angle brackets
+# are legitimate content ("2 < 3", someone tweeting "<script>alert(1)</script>"
+# verbatim), and this project exists to preserve that text byte-for-byte, not
+# to reject it. The regression actually worth catching is the opposite one —
+# something HTML-escaping the content (e.g. a future CGI.escapeHTML creeping
+# in) would turn "<3" into "&lt;3" and corrupt every post silently. HTML
+# entities in the output are proof that happened; angle brackets are not.
+#
+# No default destination: a stale `jekyll serve` can leave a _site/ that was
+# never built from this checkout, so a bare invocation must not read it.
+set -euo pipefail
+
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+
+if [ "$#" -lt 1 ]; then
+  echo "check-llm-x: usage: check-llm-x <build-destination>" >&2
+  echo "no default — pass the directory you just built, e.g." \
+       "'bundle exec jekyll build --destination /tmp/out && check-llm-x /tmp/out'" >&2
+  exit 1
+fi
+
+dest="$1"
+file="$dest/llm/x.md"
+
+if [ ! -d "$dest" ]; then
+  echo "check-llm-x: build directory '$dest' does not exist — build it first with" \
+       "'bundle exec jekyll build --destination $dest'" >&2
+  exit 1
+fi
+
+if [ ! -f "$file" ]; then
+  echo "check-llm-x: $file is missing" >&2
+  exit 1
+fi
+
+size=$(wc -c < "$file")
+if [ "$size" -lt 100 ]; then
+  echo "check-llm-x: $file is only $size bytes, too small to be a real archive" >&2
+  exit 1
+fi
+
+if grep -qE '&(lt|gt|amp|quot|#39);' "$file"; then
+  echo "check-llm-x: $file contains an HTML entity — something HTML-escaped the" \
+       "content; this file must preserve post text byte-literal" >&2
+  exit 1
+fi
+
+if ! head -1 "$file" | grep -qE '^# X posts'; then
+  echo "check-llm-x: $file doesn't start with '# X posts' — not the archive it claims to be" >&2
+  exit 1
+fi
+
+if ! grep -qE '^### ' "$file"; then
+  echo "check-llm-x: $file has no '### ' post heading — looks structurally empty" >&2
+  exit 1
+fi
+
+# The one check that can see the bug this file's escaping exists to prevent.
+# Post text is interpolated into the document, so it can open a block construct
+# — an unclosed fence, HTML comment, <script>, CDATA — that a parser then runs
+# to EOF, silently eating every '### ' heading below it. Grepping raw bytes
+# can't tell: the swallowed headings are still there as text. Only a real
+# CommonMark parse resolves what the document actually *is*, so compare the two.
+literal=$(grep -c '^### ' "$file")
+if ! resolved=$(BUNDLE_GEMFILE="$repo_root/Gemfile" bundle exec ruby -rcommonmarker -e '
+  count = 0
+  Commonmarker.parse(File.read(ARGV[0])).walk do |node|
+    count += 1 if node.type == :heading && node.header_level == 3
+  end
+  puts count
+' "$file" 2>&1); then
+  echo "check-llm-x: could not CommonMark-parse $file:" >&2
+  echo "$resolved" >&2
+  echo "check-llm-x: run 'bundle install' in $repo_root (the :checks group provides commonmarker)" >&2
+  exit 1
+fi
+
+if [ "$literal" != "$resolved" ]; then
+  echo "check-llm-x: $file has $literal literal '### ' lines but a CommonMark parse resolves" \
+       "$resolved level-3 headings — post text is impersonating document structure and" \
+       "swallowing (or inventing) post headings; check the escaping in _plugins/x_generator.rb" >&2
+  exit 1
+fi
+
+echo "check-llm-x: OK ($file, $size bytes, $resolved post headings)"

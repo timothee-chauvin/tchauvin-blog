@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Overlay this code repo onto the content tree (the cwd). The two repos' tracked
+# file sets must be disjoint: a path tracked by both would be silently clobbered
+# by the copy, so fail instead. Exception: README.md, LICENSE, .gitignore and
+# Makefile are each repo's own and are never copied.
+#
+# Used identically by the content repo's deploy workflow and its `make sync-code`.
+set -euo pipefail
+
+code=${1:?usage: overlay <path-to-code-repo-checkout>}
+
+own_files=(README.md LICENSE .gitignore Makefile)
+overlap=$(comm -12 <(git ls-files | sort) <(git -C "$code" ls-files | sort) \
+  | grep -vxF -f <(printf '%s\n' "${own_files[@]}") || true)
+if [ -n "$overlap" ]; then
+  echo "overlay: refusing to run — tracked in both repos (would be clobbered):" >&2
+  echo "$overlap" >&2
+  exit 1
+fi
+
+rsync -a --exclude=/.git --exclude=/.github "${own_files[@]/#/--exclude=/}" "$code"/ ./

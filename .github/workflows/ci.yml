@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv run pytest
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3.1"
+          bundler-cache: true
+      - run: scripts/check-x-escaping
+
+  # The site build needs this repo overlaid on the private content repo, so the
+  # deploy itself lives there (public Actions logs must never see content paths).
+  # SITE_DISPATCH_TOKEN: fine-grained PAT, Actions read/write on the site repo.
+  deploy-site:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - run: gh workflow run pages.yml -R timothee-chauvin/tchauvin.com --ref gh-pages
+        env:
+          GH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}

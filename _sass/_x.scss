@@ -1,0 +1,298 @@
+/**
+ * X post cards for the mirror at /x/ (markup: _includes/x_post.html, layouts
+ * x_index/x_year). Deliberately does not inherit the site's Bitter/$text-color
+ * look: the point of the mirror is that a card reads as if it came from X, so
+ * the palette, type scale and font stack below are X's, not the site's. Accepted
+ * risk: a snapshot of X's design circa 2026 that will drift as X redesigns.
+ */
+$x-text: #0f1419;
+$x-muted: #536471;
+$x-border: #cfd9de;
+$x-link: #1d9bf0;
+$x-blank: #eff3f4;
+
+$x-avatar: 48px;
+$x-gap: 12px;
+$x-radius: 16px;
+$x-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+.x-archive {
+  max-width: 600px; // X's timeline column
+  margin: 0 auto;
+}
+
+.x-archive__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-unit * 0.5;
+
+  .page-heading {
+    margin-bottom: 0;
+  }
+}
+
+.x-archive__intro {
+  margin-top: $spacing-unit * 0.5;
+  @include relative-font-size(0.9375);
+}
+
+.x-years {
+  margin-left: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    padding: 0.4em 0;
+    border-bottom: 1px solid $grey-color-light;
+  }
+}
+
+.x-years__count {
+  color: $grey-color;
+  @include relative-font-size(0.875);
+}
+
+.x-archive__nav {
+  margin-top: $spacing-unit;
+}
+
+.x-thread {
+  padding: $x-gap 0;
+  border-bottom: 1px solid $x-border;
+}
+
+.x-post {
+  display: flex;
+  gap: $x-gap;
+  padding: $x-gap 0;
+  font-family: $x-font;
+  font-size: 15px;
+  line-height: 20px;
+  color: $x-text;
+}
+
+.x-post__gutter {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: $x-avatar;
+}
+
+.x-post__avatar {
+  width: $x-avatar;
+  height: $x-avatar;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: $x-blank;
+}
+
+/**
+ * The vertical thread line, drawn on the item wrapper rather than inside the
+ * card's own flex gutter. A card is only as tall as its text, so a gutter-bound
+ * line stops after a few pixels on a one-line post, and a quote card — a sibling
+ * of the article, not a child — leaves it hundreds of pixels short. Absolutely
+ * positioning it against the item makes it span whatever the item contains.
+ * `top` clears the avatar: card padding + avatar + a 4px gap.
+ */
+.x-thread__item {
+  position: relative;
+}
+
+.x-thread__item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: ($x-avatar * 0.5) - 1px;
+  top: $x-gap + $x-avatar + 4px;
+  bottom: -8px;
+  width: 2px;
+  background-color: $x-border;
+}
+
+.x-post__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.x-post__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.x-post__name {
+  font-weight: 700;
+}
+
+.x-post__handle,
+.x-post__sep,
+.x-post__date {
+  color: $x-muted;
+}
+
+.x-post__date {
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.x-post__text {
+  margin-top: 2px;
+  overflow-wrap: break-word;
+
+  a {
+    color: $x-link;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.x-post__unavailable {
+  margin: 2px 0 0;
+  color: $x-muted;
+  font-style: italic;
+}
+
+/**
+ * Media grid. X shows at most four attachments in a fixed 16:9 box; a lone
+ * attachment instead keeps its own aspect ratio up to a maximum height.
+ */
+.x-post__media {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  margin-top: $x-gap;
+  overflow: hidden;
+  border: 1px solid $x-border;
+  border-radius: $x-radius;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.x-post__media--1 {
+  grid-template-columns: 1fr;
+
+  img {
+    height: auto;
+    max-height: 510px;
+    object-fit: contain;
+  }
+}
+
+.x-post__media--2,
+.x-post__media--3,
+.x-post__media--4 {
+  aspect-ratio: 16 / 9;
+}
+
+.x-post__media--3,
+.x-post__media--4 {
+  grid-template-rows: 1fr 1fr;
+}
+
+.x-post__media--3 img:first-child {
+  grid-row: span 2;
+}
+
+.x-post__video {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-unit;
+  color: $x-link;
+  text-decoration: none;
+  background-color: $x-blank;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+/**
+ * A quoted post sits inside the quoting post's body as a bordered card, with a
+ * smaller avatar — X's own treatment.
+ */
+/**
+ * The left margin aligns the card with the quoting post's body, and is also what
+ * keeps it clear of the thread line running down the gutter at 23px. Narrowing it
+ * to reclaim width on a phone drew the line straight through the card, so it is
+ * the same at every width.
+ */
+.x-post__quote {
+  margin: $x-gap 0 0 ($x-avatar + $x-gap);
+  border: 1px solid $x-border;
+  border-radius: $x-radius;
+}
+
+.x-post--quoted {
+  padding: $x-gap;
+  gap: 8px;
+
+  .x-post__gutter {
+    width: 20px;
+  }
+
+  .x-post__avatar {
+    width: 20px;
+    height: 20px;
+  }
+
+  .x-post__media {
+    border-radius: $x-radius * 0.75;
+  }
+}
+
+// Curation star: static badge on curated posts for everyone; becomes a toggle
+// when the owner's PAT is present (see _includes/x_curate.html).
+.x-curate-star {
+  color: #f0b400;
+  font-size: 15px;
+
+  &:not(.is-on) {
+    color: #536471;
+  }
+
+  &.is-toggle {
+    cursor: pointer;
+    user-select: none;
+  }
+}
+
+// Owner-only bulk-push / sync bar; only ever inserted by x_curate.html.
+.x-curate-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  font-size: 14px;
+
+  button {
+    cursor: pointer;
+
+    &:disabled {
+      cursor: default;
+    }
+  }
+}
+
+.x-curate-bar__status {
+  color: #536471;
+}
+
+.x-archive__counterpart,
+.x-archive__empty {
+  color: #536471;
+}

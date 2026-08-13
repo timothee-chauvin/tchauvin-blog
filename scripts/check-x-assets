@@ -1,0 +1,170 @@
+#!/usr/bin/env bash
+# Visitors to /x/ must never contact an X-operated host (the invariant), and
+# must not silently pick up some other off-domain subresource either (the
+# stricter proxy rule that makes the check robust to a host X hasn't used
+# yet). Post media and avatars are mirrored into assets/x/ precisely so every
+# embedded resource can be local. Links to x.com in an <a href> are the
+# expected exception — the permalink back to the real post — and are exempt;
+# every other host-bearing src/srcset/link-href is checked.
+#
+# No default destination: a stale `jekyll serve` can leave a _site/ that was
+# never built from this checkout, so a bare invocation must not read it.
+#
+# Unlike check-post-headings and check-llm-x, this script needs a real (if
+# minimal) HTML parse -- see the comment further down -- so it shells out to
+# `python3` (stdlib only: html.parser, urllib.parse). Not a Gemfile entry;
+# checked explicitly below so a missing interpreter fails with a clear
+# message instead of a confusing "no violations" false pass.
+set -euo pipefail
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "check-x-assets: python3 is required (stdlib only: html.parser, urllib.parse) but was not found on PATH" >&2
+  exit 1
+fi
+
+if [ "$#" -lt 1 ]; then
+  echo "check-x-assets: usage: check-x-assets <build-destination>" >&2
+  echo "no default — pass the directory you just built, e.g." \
+       "'bundle exec jekyll build --destination /tmp/out && check-x-assets /tmp/out'" >&2
+  exit 1
+fi
+
+dest="$1"
+
+if [ ! -d "$dest" ]; then
+  echo "check-x-assets: build directory '$dest' does not exist — build it first with" \
+       "'bundle exec jekyll build --destination $dest'" >&2
+  exit 1
+fi
+
+fail=0
+
+# Defense in depth, independent of HTML structure: a literal twimg.com/pbs.twimg
+# substring anywhere under x/ or llm/x/ (comments, JSON-LD, malformed markup, the
+# machine view) is also a failure. The parser below is the actual enforcement of
+# the host rules; this just catches anything it might miss.
+if grep -rlE 'twimg\.com' "$dest/x" "$dest/llm/x" 2>/dev/null; then
+  echo "error: the files above reference twimg.com" >&2
+  fail=1
+fi
+
+# Tags in this codebase's own markup wrap across lines (e.g. head_custom.html's
+# <link ...\n  rel="stylesheet">), so a line-oriented grep can't reliably tell a
+# <link href> from an <a href> — hence a real (if minimal) HTML parse below,
+# rather than more regex.
+if [ -d "$dest/x" ] && ! python3 - "$dest/x" <<'PYEOF'
+import re
+import sys
+from html.parser import HTMLParser
+from pathlib import Path
+from urllib.parse import urlsplit
+
+# Pre-existing sitewide third parties, loaded unconditionally from
+# _includes/head_custom.html, with nothing to do with X: GoatCounter
+# (analytics) and Google Fonts. Removing the Google Fonts dependency (serving
+# the font locally instead) is a known TODO.
+# Anything else off-domain must be added here deliberately -- that friction
+# is the point of keeping this list explicit instead of just checking X hosts.
+ALLOWED_HOSTS = {"gc.zgo.at", "fonts.googleapis.com", "fonts.gstatic.com"}
+
+X_HOSTS = {"x.com", "www.x.com", "twitter.com", "www.twitter.com"}
+
+
+def is_x_host(host):
+    host = (host or "").lower()
+    return host in X_HOSTS or host == "twimg.com" or host.endswith(".twimg.com")
+
+
+# WHATWG: browsers strip leading/trailing C0-control-or-space (0x00-0x20) from
+# a URL before fetching it, so `src=" https://x.com/evil.js"` still loads
+# x.com. Without stripping, host_of() below sees a string starting with a
+# space, matches neither the "//" nor the "scheme://" prefix, and returns
+# None (nothing to check) -- a one-character, invisible-in-review bypass.
+_C0_OR_SPACE = "".join(chr(c) for c in range(0x00, 0x21))
+
+
+def host_of(url):
+    # Returns None for a site-absolute ("/...") or scheme-relative-but-local
+    # ("foo.jpg") value -- i.e. nothing for the caller to check.
+    url = url.strip(_C0_OR_SPACE)
+    if url.startswith("//"):
+        return urlsplit("http:" + url).hostname
+    if re.match(r"^[a-zA-Z][a-zA-Z0-9+.\-]*://", url):
+        return urlsplit(url).hostname
+    return None
+
+
+def srcset_urls(value):
+    # srcset is a comma-separated list of "<url> <descriptor>" pairs.
+    urls = []
+    for candidate in value.split(","):
+        candidate = candidate.strip()
+        if candidate:
+            urls.append(candidate.split()[0])
+    return urls
+
+
+class Checker(HTMLParser):
+    def __init__(self, path):
+        super().__init__()
+        self.path = path
+        self.violations = []
+
+    def check_resource(self, tag, attr, url):
+        if url.strip(_C0_OR_SPACE).startswith("data:"):
+            return
+        host = host_of(url)  # host_of strips leading/trailing C0-or-space itself
+        if host is None:
+            return
+        if is_x_host(host):
+            self.violations.append(
+                f"{self.path}: <{tag} {attr}=\"{url}\"> references X-operated host {host}"
+            )
+        elif host not in ALLOWED_HOSTS:
+            self.violations.append(
+                f"{self.path}: <{tag} {attr}=\"{url}\"> is off-domain and not on the "
+                f"allowlist (host {host})"
+            )
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag != "a":
+            if attrs.get("src"):
+                self.check_resource(tag, "src", attrs["src"])
+            if attrs.get("srcset"):
+                for url in srcset_urls(attrs["srcset"]):
+                    self.check_resource(tag, "srcset", url)
+        # href is otherwise exempt (an <a href="https://x.com/...​/status/...">
+        # permalink is expected and correct) -- except a <link href>, which is
+        # itself a fetched subresource (stylesheet, preload, ...), not a link
+        # a visitor clicks. Rule A only (must not be an X host): a <link> to
+        # some other off-domain host is not this check's business.
+        if tag == "link" and attrs.get("href"):
+            href = attrs["href"]
+            host = host_of(href)
+            if host and is_x_host(host):
+                self.violations.append(
+                    f"{self.path}: <link href=\"{href}\"> references X-operated host {host}"
+                )
+
+
+violations = []
+for path in sorted(Path(sys.argv[1]).rglob("*.html")):
+    checker = Checker(str(path))
+    checker.feed(path.read_text(encoding="utf-8"))
+    violations.extend(checker.violations)
+
+if violations:
+    print("\n".join(violations))
+    sys.exit(1)
+PYEOF
+then
+  echo "error: the resources above must not be embedded under /x/ (see above)" >&2
+  fail=1
+fi
+
+if [ "$fail" -eq 0 ]; then
+  echo "check-x-assets: OK ($dest)"
+fi
+
+exit "$fail"

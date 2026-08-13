@@ -1,0 +1,39 @@
+---
+layout: default
+---
+{%- comment -%}
+Index of one tree of the X mirror (curated or full): year links plus a pointer
+to the counterpart tree. Data precomputed by _plugins/x_generator.rb.
+The editorial prose (epigraph, intro sentence) is content: x_archive_intro.html
+is tracked in the content repo alongside home.html, not here.
+{%- endcomment -%}
+<div class="x-archive">
+  <header class="x-archive__header">
+    <h1 class="page-heading">{{ page.title }}</h1>
+    <div class="post-pills">
+      {%- if page.tree == "curated" -%}
+      {%- include copy_pill.html src="/llm/x/curated.md" label="Copy the curated posts as Markdown for an LLM" -%}
+      {%- else -%}
+      {%- include copy_pill.html src="/llm/x.md" label="Copy the whole X archive as Markdown for an LLM" -%}
+      {%- endif -%}
+    </div>
+  </header>
+
+  <p class="x-archive__counterpart">
+    See also: <a href="{{ page.counterpart_url | relative_url }}">{% if page.tree == "curated" %}full archive{% else %}curated archive{% endif %}</a>
+  </p>
+
+{% include x_archive_intro.html %}
+
+  <ul class="x-years">
+    {%- for entry in page.years -%}
+    <li>
+      <a href="{{ '/x/' | append: page.tree | append: '/' | append: entry.year | append: '/' | relative_url }}">{{ entry.year }}</a>
+      <span class="x-years__count">{{ entry.count }} post{% if entry.count != 1 %}s{% endif %}</span>
+    </li>
+    {%- endfor -%}
+  </ul>
+</div>
+
+{%- include copy_llm.html -%}
+{%- include x_curate.html -%}

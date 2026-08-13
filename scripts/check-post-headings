@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Posts get their <h1> from the front-matter title, so the body must start
+# headings at '## '. Fail on any level-1 heading ('# ') in a post, skipping
+# front matter and fenced code blocks (where '# ' is a legit comment).
+set -euo pipefail
+
+status=0
+for file in "$@"; do
+  awk '
+    FNR==1            { fm=0; fence=0 }
+    FNR==1 && $0=="---" { fm=1; next }
+    fm && $0=="---"   { fm=0; next }
+    fm                { next }
+    /^[ \t]*(```|~~~)/ { fence=!fence; next }
+    fence             { next }
+    /^# /             { printf "%s:%d: %s\n", FILENAME, FNR, $0; bad=1 }
+    END               { exit bad ? 1 : 0 }
+  ' "$file" || status=1
+done
+
+if [ "$status" -ne 0 ]; then
+  echo
+  echo "Posts must not use a level-1 heading ('# '); start at '## ' instead." >&2
+fi
+exit "$status"

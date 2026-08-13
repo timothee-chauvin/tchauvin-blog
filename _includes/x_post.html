@@ -1,0 +1,62 @@
+{%- comment -%}
+One X post card. Parameters: include.post (a post from a year file, or a ref),
+include.author (handle, display_name, avatar_path), include.variant
+("main" | "parent" | "quoted").
+
+refs.json is committed and hand-editable, so every interpolation is escaped, not
+just the display name. Every src stays a site-absolute local path: the point of
+the mirror is that reading it tells X nothing about the visitor.
+
+The thread line is drawn by _sass/_x.scss on the enclosing .x-thread__item, not
+from here — a card is only as tall as its own text, so a line inside this gutter
+cannot reach the next avatar.
+{%- endcomment -%}
+<article class="x-post x-post--{{ include.variant }}">
+  <div class="x-post__gutter">
+    {% if include.author.avatar_path %}
+    <img class="x-post__avatar" src="{{ include.author.avatar_path | escape }}" alt="" loading="lazy" width="48" height="48">
+    {% else %}
+    <span class="x-post__avatar x-post__avatar--blank" aria-hidden="true"></span>
+    {% endif %}
+  </div>
+  <div class="x-post__body">
+    <div class="x-post__meta">
+      <span class="x-post__name">{{ include.author.display_name | escape }}</span>
+      <span class="x-post__handle">@{{ include.author.handle | escape }}</span>
+      {%- comment -%}
+      An unavailable ref has no real timestamp — hydration stamped it with the
+      time it ran — and no reachable permalink, so it is given neither.
+      {%- endcomment -%}
+      {% unless include.post.unavailable %}
+      <span class="x-post__sep">·</span>
+      <a class="x-post__date" href="https://x.com/{{ include.author.handle | escape }}/status/{{ include.post.id | escape }}">
+        <time datetime="{{ include.post.created_at | escape }}">{{ include.post.created_at | date: "%-d %b %Y" }}</time>
+      </a>
+      {% endunless %}
+      {%- comment -%}
+      Static star on curated posts, visible to everyone. When the owner's PAT is
+      present, _includes/x_curate.html turns every main card's star (adding hollow
+      ones) into a toggle.
+      {%- endcomment -%}
+      {% if include.post.curated and include.variant == "main" %}
+      <span class="x-curate-star is-on" title="Curated">★</span>
+      {% endif %}
+    </div>
+    {% if include.post.unavailable %}
+    <p class="x-post__unavailable">This post is no longer available.</p>
+    {% else %}
+    <div class="x-post__text">{{ include.post.text | x_text_html }}</div>
+    {% endif %}
+    {% if include.post.media.size > 0 %}
+    <div class="x-post__media x-post__media--{{ include.post.media.size }}">
+      {% for item in include.post.media %}
+        {% if item.local_path %}
+        <img src="{{ item.local_path | escape }}" alt="{{ item.alt | default: '' | escape }}" loading="lazy">
+        {% else %}
+        <a class="x-post__video" href="{{ item.source_url | escape }}">Video — watch on X</a>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</article>

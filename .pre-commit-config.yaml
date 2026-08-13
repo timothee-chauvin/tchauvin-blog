@@ -1,0 +1,48 @@
+repos:
+  - repo: local
+    hooks:
+      - id: no-h1-in-posts
+        name: posts start headings at h2 (no '# ')
+        entry: scripts/check-post-headings
+        language: script
+        files: ^_posts/.*\.(md|markdown)$
+      # Unlike the two below, this one drives the escaping functions directly, so it
+      # needs no build and no _data/x/ — and so it is not gated on either.
+      - id: x-escaping-self-test
+        name: /llm/x/ escaping neutralizes structural Markdown
+        entry: scripts/check-x-escaping
+        language: system
+        pass_filenames: false
+        files: ^(_plugins/x_generator\.rb|scripts/check-x-escaping)$
+      # Both checks need a real build and both no-op until `backfill` commits
+      # _data/x/ (not yet in this repo) — skip cleanly rather than either
+      # blocking every commit forever or vacuously "passing" a check that
+      # examined nothing. Each builds to its own scratch destination: the
+      # scripts require an explicit destination argument (see scripts/check-x-assets,
+      # scripts/check-llm-x) precisely so they never read a stray `_site/`.
+      - id: x-assets-privacy
+        name: /x/ pages never reference an X-operated host
+        entry: >-
+          bash -c 'if [ ! -d _data/x ]; then
+          echo "check-x-assets: skipping - _data/x/ not present yet (arrives after backfill)";
+          exit 0; fi;
+          dest=$(mktemp -d) &&
+          bundle exec jekyll build --quiet --destination "$dest" &&
+          scripts/check-x-assets "$dest";
+          status=$?; rm -rf "$dest"; exit $status'
+        language: system
+        pass_filenames: false
+        files: ^(_data/x/|_plugins/|_includes/|_sass/)
+      - id: llm-x-smoke-test
+        name: /llm/x/ machine view is well-formed
+        entry: >-
+          bash -c 'if [ ! -d _data/x ]; then
+          echo "check-llm-x: skipping - _data/x/ not present yet (arrives after backfill)";
+          exit 0; fi;
+          dest=$(mktemp -d) &&
+          bundle exec jekyll build --quiet --destination "$dest" &&
+          scripts/check-llm-x "$dest";
+          status=$?; rm -rf "$dest"; exit $status'
+        language: system
+        pass_filenames: false
+        files: ^(_data/x/|_plugins/|_includes/|_sass/)

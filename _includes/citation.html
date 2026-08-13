@@ -1,0 +1,37 @@
+{%- comment -%}
+"Cite this post" feature. Enable per-post with `cite: true` in the front matter.
+Optional overrides: `cite_author` (default site.cite_author) and `cite_key`
+(BibTeX key, default <author surname><year><slug>). Renders the citation boxes both inline
+at the foot of the post and inside a popup opened from the header "Cite" pill.
+Citation format follows epoch.ai.
+{%- endcomment -%}
+{%- assign cite_author = page.cite_author | default: site.cite_author -%}
+{%- assign cite_year = page.date | date: "%Y" -%}
+{%- assign cite_url = page.url | absolute_url -%}
+{%- if page.cite_key -%}
+  {%- assign cite_key = page.cite_key -%}
+{%- else -%}
+  {%- assign slug_clean = page.slug | replace: "-", "" -%}
+  {%- assign cite_surname = site.cite_author | split: " " | last | slugify -%}
+  {%- assign cite_key = cite_surname | append: cite_year | append: slug_clean -%}
+{%- endif -%}
+{%- assign access_human = site.time | date: "%-d %b %Y" -%}
+{%- assign access_iso = site.time | date: "%Y-%m-%d" -%}
+{%- assign ob = "{" -%}
+{%- assign cb = "}" -%}
+<section id="cite" class="citation">
+  <h2>Cite this post</h2>
+  {% include cite_boxes.html %}
+</section>
+
+<dialog id="cite-dialog" class="cite-dialog" aria-label="Cite this post">
+  <div class="cite-dialog-inner">
+    <div class="cite-dialog-head">
+      <h2>Cite this post</h2>
+      <button type="button" class="cite-dialog-close" aria-label="Close">&times;</button>
+    </div>
+    {% include cite_boxes.html %}
+  </div>
+</dialog>
+
+<script src="/assets/js/cite.js"></script>
