@@ -1,12 +1,28 @@
 // Owner-only curation and sync controls; see _includes/x_curate.html for the
 // security model.
 (function () {
-  // #curate is the mobile setup path (no devtools console there); #curate-off forgets.
-  if (location.hash === '#curate-off') localStorage.removeItem('x-curate-token');
-  if (location.hash === '#curate' && !localStorage.getItem('x-curate-token')) {
-    var entered = prompt('GitHub fine-grained PAT (Actions rw on this repo):');
-    if (entered) localStorage.setItem('x-curate-token', entered.trim());
+  // #curate is the setup path (works on mobile, no devtools console needed);
+  // #curate-off forgets. Handled both at load time and on hashchange: typing a
+  // hash onto an already-open page is a hash-only navigation with no reload, so
+  // the load-time check alone would never see it.
+  function applyHash() {
+    if (location.hash === '#curate-off' && localStorage.getItem('x-curate-token')) {
+      localStorage.removeItem('x-curate-token');
+      return true;
+    }
+    if (location.hash === '#curate' && !localStorage.getItem('x-curate-token')) {
+      var entered = prompt('GitHub fine-grained PAT (Actions rw on this repo):');
+      if (entered) {
+        localStorage.setItem('x-curate-token', entered.trim());
+        return true;
+      }
+    }
+    return false;
   }
+  window.addEventListener('hashchange', function () {
+    if (applyHash()) location.reload();
+  });
+  applyHash();
   var token = localStorage.getItem('x-curate-token');
   if (!token) return;
 

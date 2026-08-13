@@ -187,9 +187,12 @@ module XMirror
       page = Jekyll::PageWithoutAFile.new(site, site.source, "x", "index.html")
       # The title puts it in minima's nav (see header_pages in _config.yml).
       page.data.merge!("layout" => nil, "permalink" => "/x/", "title" => "X Archive")
+      # The script preserves the URL hash (#curate); the meta refresh is the
+      # no-JS fallback and drops it.
       page.content = <<~HTML
         <!doctype html>
         <meta charset="utf-8">
+        <script src="/assets/js/x-redirect.js"></script>
         <meta http-equiv="refresh" content="0; url=/x/curated/">
         <link rel="canonical" href="#{site.config["url"]}/x/curated/">
         <a href="/x/curated/">X posts (curated)</a>
