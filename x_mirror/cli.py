@@ -126,7 +126,8 @@ def forget(target: str, scope: str | None = None) -> None:
 
 def curate(target: str, remove: bool = False) -> None:
     """Add (or with --remove, drop) a mirrored post from the curated view. The curate
-    button on /x/ pages edits the same _data/x/curated.json via the GitHub API."""
+    button on /x/ pages edits the same _data/x/curated.json by dispatching curate.yml,
+    which runs this command."""
     post_id = _extract_post_id(target)
     store = _store()
     if not any(p.id == post_id for p in store.all_posts()):
