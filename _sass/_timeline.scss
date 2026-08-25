@@ -1,0 +1,70 @@
+// Home-page timeline: posts, drafts (`draft: 1`) and talks (_data/talks.yml)
+// in one compact chronological list.
+.timeline {
+  list-style: none;
+  margin-left: 0;
+
+  li {
+    position: relative;
+    margin-bottom: $spacing-unit * 0.25;
+    line-height: 1.35;
+  }
+}
+
+.timeline-date {
+  font-size: $small-font-size;
+  color: $grey-color;
+  margin-right: 0.5em;
+  white-space: nowrap;
+}
+
+.timeline-title {
+  @include relative-font-size(1.25);
+}
+
+.timeline-links {
+  font-size: $small-font-size;
+  color: $grey-color;
+  margin-left: 0.3em;
+}
+
+.timeline-tag {
+  @include relative-font-size(0.7);
+  color: $grey-color-dark;
+  background: $grey-color-light;
+  border-radius: 3px;
+  padding: 0.05em 0.4em;
+  margin-right: 0.5em;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+// Summary tooltip, from data-summary on the title link.
+.timeline-title[data-summary]:not([data-summary=""]) {
+  &::after {
+    content: attr(data-summary);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    z-index: 1;
+    width: min(32em, 100%);
+    margin-top: 0.4em;
+    padding: 0.6em 0.9em;
+    font-size: $base-font-size;
+    line-height: 1.45;
+    color: $text-color;
+    background: $background-color;
+    border: 1px solid $grey-color-light;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease 0.25s, visibility 0s linear 0.4s;
+  }
+  &:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0.35s;
+  }
+}

@@ -32,6 +32,10 @@ layout: default
     </div>
   </header>
 
+  {%- if page.draft -%}
+  <p class="draft-notice">Draft — unfinished and likely to change.</p>
+  {%- endif -%}
+
   <div class="post-content e-content" itemprop="articleBody">
     {{ content }}
   </div>
