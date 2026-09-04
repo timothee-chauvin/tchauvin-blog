@@ -18,7 +18,7 @@ module LlmExport
         text   = "#{header}\n\n#{post.content}"
         # Link rather than duplicate the citation feature (_includes/cite_boxes.html);
         # an LLM can fetch the anchor on the rare occasion it needs to cite.
-        text += "\n\n## How to cite\n\nSee #{url}#cite" if post.data["cite"]
+        text += "\n\n## How to cite\n\nSee #{url}#cite" if post.data["cite"] == 1
 
         path = "llm#{post.url}.md" # post.url is "/<slug>"
         site.static_files << LlmFile.new(site, File.dirname(path), File.basename(path), text)

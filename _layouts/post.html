@@ -17,7 +17,7 @@ layout: default
       <div class="post-pills">
         {%- assign llm_src = '/llm' | append: page.url | append: '.md' -%}
         {%- include copy_pill.html src=llm_src label="Copy this post as Markdown for an LLM" -%}
-        {%- if page.cite -%}
+        {%- if page.cite == 1 -%}
         <!-- icon: Lucide message-square-quote, ISC License (filled variant) -->
         <a class="cite-pill" href="#cite" aria-label="Jump to citation">
           <svg class="cite-pill-icon" xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" aria-hidden="true">
@@ -32,15 +32,15 @@ layout: default
     </div>
   </header>
 
-  {%- if page.draft -%}
-  <p class="draft-notice">Draft — unfinished and likely to change.</p>
+  {%- if page.draft == 1 -%}
+  <p><span class="timeline-tag">draft</span></p>
   {%- endif -%}
 
   <div class="post-content e-content" itemprop="articleBody">
     {{ content }}
   </div>
 
-  {%- if page.cite -%}
+  {%- if page.cite == 1 -%}
     {%- include citation.html -%}
   {%- endif -%}
 
