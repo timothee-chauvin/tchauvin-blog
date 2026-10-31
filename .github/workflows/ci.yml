@@ -17,6 +17,7 @@ jobs:
           ruby-version: "3.3.1"
           bundler-cache: true
       - run: scripts/check-x-escaping
+      - run: scripts/check-x-linkify
 
   # The site build needs this repo overlaid on the private content repo, so the
   # deploy itself lives there (public Actions logs must never see content paths).

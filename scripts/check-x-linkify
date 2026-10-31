@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Self-test for XFilters#x_text_html in _plugins/x_filters.rb: URL boundaries
+# and escaping. Same rationale as check-x-escaping — data-independent, so it
+# fires even when no post happens to end a sentence with a link.
+set -euo pipefail
+
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+
+BUNDLE_GEMFILE="$repo_root/Gemfile" bundle exec ruby -rliquid - \
+  "$repo_root/_plugins/x_filters.rb" <<'RUBY'
+require ARGV[0]
+
+def link(url) = %(<a href="#{url}" rel="nofollow noopener">#{url}</a>)
+
+CASES = {
+  "see https://a.b/c." => "see #{link("https://a.b/c")}.",
+  "(see https://a.b/c)." => "(see #{link("https://a.b/c")}).",
+  "https://a.b/c), then" => "#{link("https://a.b/c")}), then",
+  "https://a.b/c)'s point" => "#{link("https://a.b/c")})&#39;s point",
+  "https://a.b/c: yes" => "#{link("https://a.b/c")}: yes",
+  "https://a.b/c#frag, and" => "#{link("https://a.b/c#frag")}, and",
+  "https://a.b/Foo_(bar) ok" => "#{link("https://a.b/Foo_(bar)")} ok",
+  "https://a.b/?x=1&y=2" => link("https://a.b/?x=1&amp;y=2"),
+  "<b>https://a.b/c</b>" => "&lt;b&gt;#{link("https://a.b/c")}&lt;/b&gt;",
+  "hi @bob\nhttps://a.b" => %(hi <a href="https://x.com/bob">@bob</a><br>#{link("https://a.b")}),
+  "https://a.b/@not_a_mention" => link("https://a.b/@not_a_mention"),
+}.freeze
+
+filter = Object.new.extend(XFilters)
+failures = CASES.filter_map do |input, expected|
+  actual = filter.x_text_html(input)
+  "  #{input.inspect}\n    expected #{expected.inspect}\n    got      #{actual.inspect}" if actual != expected
+end
+
+if failures.empty?
+  puts "check-x-linkify: OK (#{CASES.size} cases)"
+else
+  warn "check-x-linkify: x_text_html in _plugins/x_filters.rb is wrong for #{failures.size} case(s):"
+  warn failures.join("\n")
+  exit 1
+end
+RUBY

@@ -150,6 +150,7 @@ module XMirror
       page.data.merge!(
         "layout" => "x_year",
         "title" => "X posts — #{year}#{tree == "curated" ? " (curated)" : ""}",
+        "description" => description(tree, year, owner),
         "tree" => tree,
         "counterpart_url" => "/x/#{other_tree(tree)}/#{year}/",
         "year" => year,
@@ -170,6 +171,7 @@ module XMirror
       page.data.merge!(
         "layout" => "x_index",
         "title" => tree == "curated" ? "X posts — curated" : "X posts — full archive",
+        "description" => description(tree, nil, owner),
         "tree" => tree,
         "counterpart_url" => "/x/#{other_tree(tree)}/",
         "owner" => owner,
@@ -180,6 +182,17 @@ module XMirror
 
     def other_tree(tree)
       tree == "curated" ? "full" : "curated"
+    end
+
+    # Meta description for the tree index (year nil) and year pages.
+    def description(tree, year, owner)
+      who = "#{owner["display_name"]} (@#{owner["handle"]})"
+      span = year ? "from #{year}" : "by year"
+      if tree == "curated"
+        "Hand-picked X posts by #{who} #{span}: the ones worth keeping, mirrored here with threads and media, independent of X."
+      else
+        "Every X post by #{who} #{span}: the complete archive, mirrored here with threads, quotes and media, independent of X."
+      end
     end
 
     # /x/ itself just lands on the curated tree.
